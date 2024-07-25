@@ -208,7 +208,7 @@ def json_distribution_graph(
     graph = AirdropAnalyzer().get_distribution_graph_json(param)
     return JSONResponse(content=graph, status_code=200)
 
-@app.get("/graph_records/")
+@app.get("/graph_records_for_fast_api/")
 def get_graph_records(
     user_id : str
 ) -> JSONResponse:

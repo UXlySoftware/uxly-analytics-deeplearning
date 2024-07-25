@@ -60,3 +60,15 @@ class PathProvider(object):
     def get_claimer_lists(self) -> dict:
         with open(self.get_claimer_lists_json_path(), 'r') as file:
             return json.loads(file.read())
+        
+    def get_graph_json_path(self,user_id : str,time_stamp : str):
+        folder_path = self[ck.GRAPH_JSONS_FOLDER_PATH].replace('/', self.__sep)
+        arranged_time_stamp = time_stamp.replace(":" , "-")
+        if not os.path.exists(f"{folder_path}{user_id}"):
+            os.makedirs(f"{folder_path}{user_id}")
+        return self.__sep.join(
+            [
+                f"{folder_path}{user_id}",
+                arranged_time_stamp + ".json"
+            ]
+        )

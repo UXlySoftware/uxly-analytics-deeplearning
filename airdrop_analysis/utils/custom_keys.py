@@ -10,6 +10,7 @@ class CustomKeys:
     CLAIMERS_PATH = 'claimers_path'
     TABLES_FILE_PATH = 'tables_file_path'
     DEX_ADDRESSES_PATH = 'dex_addresses_path'
+    GRAPH_JSONS_FOLDER_PATH = 'graph_jsons_folder_path'
 
     # API keys
     MORALIS = 'moralis'
@@ -33,6 +34,7 @@ class CustomKeys:
     ASC = 'ASC'
     DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
     DATETIME_FORMAT_FOR_QUERIED_TRANSFERS = '%Y-%m-%dT%H:%M:%S.%fZ'
+    GRAPH = 'graph'
 
     # Wallet stats
     NFTS = 'nfts'

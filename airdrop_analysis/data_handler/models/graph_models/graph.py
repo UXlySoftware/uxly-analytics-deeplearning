@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Dict, List, Union
 
+from data_handler.models.base_models.query_parameters import GraphQueryParameters
 from data_handler.models.graph_models.node import Node
 from data_handler.models.graph_models.edge import Edge
 from utils.custom_keys import CustomKeys as ck
@@ -108,12 +109,18 @@ class Graph(BaseModel):
                     most_productive = node
         return most_productive
 
-    def get_graph_dict(self):
+    def get_graph_dict(self, communities : dict = {}):
         graph_dict = {}
         graph_dict[ck.NODES] = []
         graph_dict[ck.LINKS] = []
         for node in self.__nodes.values():
-            node_dict = {"id" : node.id}
+            hierarchy = node.hierarchy
+            label = node.label
+            for key,community in communities.items():
+                if label in community:
+                    hierarchy = key
+                    break
+            node_dict = {"id" : node.id , "hierarchy" : hierarchy}
             graph_dict[ck.NODES].append(node_dict)
         for edge in self.__edges.values():
             edge_dict = {"source" : edge.source.id , "target" : edge.destination.id}
