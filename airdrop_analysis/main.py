@@ -15,10 +15,7 @@ from data_handler.models.query_models.graph_query import GraphQuery
 app = FastAPI()
 
 origins = [
-    "http://localhost.tiangolo.com",
-    "https://localhost.tiangolo.com",
-    "http://localhost",
-    "http://localhost:8081",
+    "*",
 ]
 
 app.add_middleware(
