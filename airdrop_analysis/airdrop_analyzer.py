@@ -73,10 +73,85 @@ class AirdropAnalyzer:
             communities[communityID].append(nodeID)
         return communities
     
+    def __control_chain_like_pattern(self, communities: dict, graph: Graph) -> dict:
+        chains = {}
+        visited = set()
+        min_length = 8
+        for node in graph.nodes.values():
+            if node.label not in visited:
+                for neighbor in graph.get_neighbors(node):
+                    if (node.label, neighbor.label) not in visited:
+                        chain = [node.label]
+                        current_node = neighbor
+                        previous_node = node
+                        
+                        while True:
+                            visited.add((previous_node.label, current_node.label))
+                            if self.__is_neighbor_in_same_community(previous_node, current_node, communities):
+                                chain.append(current_node.label)
+                                neighbors = list(graph.get_neighbors(current_node))
+                                next_node = [n for n in neighbors if n != previous_node]
+                                if len(next_node) == 0:
+                                    break
+                                previous_node = current_node
+                                current_node = next_node[0]
+                            else:
+                                break
+                            
+                        if len(chain) >= min_length:
+                            chains[node.label] = chain
+        # print(chains)
+        return chains
+    
+    def __control_star_like_pattern(self, communities: dict, graph: Graph) -> dict:
+        threshold = 3
+        poss_inc_star_nodes = []
+        poss_out_star_nodes = []
+        for node in graph.nodes.values():
+            if len(node.outgoing_edges) >= threshold:
+                poss_out_star_nodes.append(node)
+            if len(node.incoming_edges) >= threshold:
+                poss_inc_star_nodes.append(node)
+        star_patterns = {}
+        for node in poss_inc_star_nodes:
+            neighbors = [neighbor.source for neighbor in node.incoming_edges]
+            neighbors_same_com = self.__is_neighbors_in_same_community(node, neighbors, communities)
+            if len(neighbors_same_com) > 0:
+                star_patterns[node.label] = neighbors_same_com
+        for node in poss_out_star_nodes:
+            neighbors = [neighbor.destination for neighbor in node.incoming_edges]
+            neighbors_same_com = self.__is_neighbors_in_same_community(node, neighbors, communities)
+            if len(neighbors_same_com) > 0:
+                try:
+                    star_patterns[node.label].extend(neighbors_same_com)
+                except Exception :
+                    star_patterns[node.label] = neighbors_same_com
+        # print(star_patterns)
+        return star_patterns
+    
+    def __is_neighbors_in_same_community(self, node , neighbors, communities):
+        neighbors_same_com = []
+        for neighbor in neighbors:
+            if self.__is_neighbor_in_same_community(node, neighbor, communities):
+                if node.label != neighbor.label:
+                    neighbors_same_com.append(neighbor.label)
+        return neighbors_same_com
+    
+    def __is_neighbor_in_same_community(self, node, neighbor, communities):
+        for community in communities.values():
+            if node.label in community:
+                if neighbor.label in community:
+                    return True
+                break
+        return False
+    
     def get_communities(self, param: GraphQueryParameters) -> dict:
         graph = self.__builder.build_graph_from_distributor(param)
         partition, _ = self.__nx_builder.get_louvain_partition(graph)
-        return self.__get_communities_from_partition(partition)
+        communities = self.__get_communities_from_partition(partition)
+        self.__control_chain_like_pattern(communities, graph)
+        self.__control_star_like_pattern(communities, graph)
+        return communities
 
     def get_graph_summary(self, param: GraphQueryParameters) -> dict:
         graph = self.__builder.build_graph_from_distributor(param)
