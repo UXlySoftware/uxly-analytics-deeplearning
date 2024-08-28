@@ -10,6 +10,7 @@ from data_handler.query_handlers.moralis_query_handler \
 from utils.path_provider import PathProvider
 from utils.custom_keys import CustomKeys as ck
 from data_handler.models.base_models.query_parameters import *
+from data_handler.models.base_models.transaction_time import TransactionTime
 
 
 class ChainQueryControllerTest():
@@ -54,20 +55,25 @@ class ChainQueryControllerTest():
 
     def __test_query_wallet_token_transfers(self):
         contract_addresses=['0x4ed4e862860bed51a9570b96d89af5e1b0efefed']
-        addresses = self.__claimers[ck.WALLET_ADDRESS].to_list()[:8]
+        addresses = self.__claimers[ck.WALLET_ADDRESS].to_list()[150:200]
         for address in addresses:
             params = TokenTransfersQueryParameters(
                 address=address, 
                 chain='base',
                 cached_first=True,
-                from_date='2022-01-01T00:00:00Z',
+                from_date='2024-01-01T00:00:00Z',
                 to_date='2024-07-15T00:00:00Z',
                 contract_addresses=contract_addresses,
                 )
             history, _ = self.__controller.get_wallet_token_transfer_history(
                 params,
             )
-            print(history.get_transaction_count())
+        total_time = 0
+        length = len(TransactionTime.average_time)
+        for i in TransactionTime.average_time:
+            total_time += i
+        print(total_time/length)
+            # print(history.get_transaction_count())
 
     def __test_query_total_token_transfer_count(self):
         contract_addresses=['0x4ed4e862860bed51a9570b96d89af5e1b0efefed']

@@ -64,25 +64,15 @@ class AirdropAnalyzer:
     
     def get_graph_records_from_user_id(self,user_id: str):
         return self.__controller.get_graph_records(user_id)
-    
-    def __get_communities_from_partition(self, partition: dict) -> dict:
-        communities: dict[str, list] = {}
-        for nodeID, communityID in partition.items():
-            if communityID not in communities:
-                communities[communityID] = []
-            communities[communityID].append(nodeID)
-        return communities
 
     def get_communities(self, param: GraphQueryParameters) -> dict:
-        graph = self.__builder.build_graph_from_distributor(param)
-        partition, _ = self.__nx_builder.get_louvain_partition(graph)
-        return self.__get_communities_from_partition(partition)
+        return self.__builder.get_communities(param)
 
     def get_graph_summary(self, param: GraphQueryParameters) -> dict:
         graph = self.__builder.build_graph_from_distributor(param)
         analysis = self.__analyzer.analyze(graph)
         if param.partition:
             partition, _ = self.__nx_builder.get_louvain_partition(graph)
-            communities = self.__get_communities_from_partition(partition)
+            communities = self.__builder.get_communities_from_partition(partition)
             analysis['communities'] = len(communities)
         return analysis

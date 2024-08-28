@@ -2,7 +2,9 @@ import json
 import moralis
 import os
 from requests_html import HTMLSession
+from datetime import datetime
 
+from data_handler.models.base_models.transaction_time import TransactionTime
 from data_handler.models.base_models.query_parameters \
     import TransactionsQueryParameters , TokenTransfersQueryParameters
 from data_handler.models.base_models.query_parameters \
@@ -37,12 +39,14 @@ class MoralisQueryHandler(object):
             event: str,
         ):
         address = params.address
+        transaction_time = TransactionTime(0)
         transactions = []
         try:
+            start_time = datetime.now()
             while params.cursor is not None:
                 tnxs, cursor = self.__query_wallet_transactions_page(
                     params, query,
-            )
+                )
                 transactions.extend(tnxs)
                 params.cursor = cursor
                 cnt = len(transactions)
@@ -54,6 +58,11 @@ class MoralisQueryHandler(object):
                 else:
                     s += ' Done.' + ' ' * 25
                 print(s, end='\r')
+            end_time = datetime.now()
+            difference = (end_time - start_time).total_seconds()
+            transaction_time.last_transaction_count = cnt
+            if cnt != 0:
+                TransactionTime.average_time.append(difference / cnt)
         except Exception as e:
             if 'Reason: Internal Server Error' in str(e):
                 print(f'Internal Server Error querying {event}s for {address}')
