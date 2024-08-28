@@ -120,6 +120,11 @@ class Graph(BaseModel):
             graph_dict[ck.LINKS].append(edge_dict)
         return graph_dict
 
+    def get_neighbors(self, node: Node) -> List[Node]:
+        inc_neighbors = [edge.source for edge in node.incoming_edges]
+        out_neighbors = [edge.destination for edge in node.outgoing_edges]
+        return inc_neighbors + out_neighbors
+    
     def __contains__(self, node: Union[Node, str]) -> bool:
         if isinstance(node, str):
             return node in self.__nodes

@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 
 from  utils.custom_keys import CustomKeys as ck
 
@@ -21,6 +22,7 @@ class PathProvider(object):
             paths_json_path = self.__sep.join(
                 [self.__path_prefix, paths_json_path],
             )
+        print(self.__path_prefix)
         with open(paths_json_path, 'r') as file:
             self.__paths = json.loads(file.read())
         return self.__paths
@@ -60,3 +62,19 @@ class PathProvider(object):
     def get_claimer_lists(self) -> dict:
         with open(self.get_claimer_lists_json_path(), 'r') as file:
             return json.loads(file.read())
+        
+    def get_graph_json_path(self,user_id : str,time_stamp_date : datetime):
+        folder_path = self[ck.GRAPH_JSONS_FOLDER_PATH].replace('/', self.__sep)
+        try:
+            time_stamp = time_stamp_date.strftime(ck.DATETIME_FORMAT)
+        except Exception:
+            time_stamp = time_stamp_date.strftime(ck.DATETIME_FORMAT_FOR_QUERIED_TRANSFERS)
+        arranged_time_stamp = time_stamp.replace(":" , "-")
+        if not os.path.exists(f"{folder_path}{user_id}"):
+            os.makedirs(f"{folder_path}{user_id}")
+        return self.__sep.join(
+            [
+                f"{folder_path}{user_id}",
+                arranged_time_stamp + ".json"
+            ]
+        )

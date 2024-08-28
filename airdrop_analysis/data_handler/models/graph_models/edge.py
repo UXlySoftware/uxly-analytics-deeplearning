@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import TYPE_CHECKING
+from datetime import datetime
 
 if TYPE_CHECKING:
     from data_handler.models.graph_models.node import Node
@@ -10,7 +11,7 @@ class Edge(BaseModel):
     destination: 'Node'
     edge_type: str
     edge_value: float
-    edge_timestamp: str
+    edge_timestamp: datetime
 
     def __init__(
             self,

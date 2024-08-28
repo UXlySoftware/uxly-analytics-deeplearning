@@ -2,13 +2,14 @@ import json
 from typing import List, Dict
 import pandas as pd
 
+from data_handler.networkx_builder import NetworkXBuilder
 from data_handler.query_handlers.chain_query_controller import \
     ChainQueryController
 from data_handler.models.base_models.transaction_history \
     import TransactionHistory
 from data_handler.models.base_models.query_parameters import \
     TokenTransfersQueryParameters, GraphQueryParameters
-from data_handler.models.table_models.token_transfer import Token_Transfer
+from data_handler.models.odbc_models.token_transfer import Token_Transfer
 from data_handler.models.graph_models.node import Node
 from data_handler.models.graph_models.edge import Edge
 from data_handler.models.graph_models.graph import Graph
@@ -24,6 +25,7 @@ class GraphBuilder():
         self.__graph = Graph()
         self.__current_query_params = None
         self.__current_hirerarchy_stack = []
+        self.__nx_builder = NetworkXBuilder()
 
     def __get_dex_addresses_from_csv(self,dex_addresses_path):
         dex_info = pd.read_csv(dex_addresses_path)
@@ -42,7 +44,7 @@ class GraphBuilder():
             from_date=params.from_date,
             to_date=params.to_date,
             order=params.edge_order,
-            limit=params.edge_limit if params.edge_limit > 0 else 300,
+            limit=params.edge_limit if params.edge_limit > 0 else 100,
         )
 
     def __get_parent_addresses(self, sender_addresses: List[str]) -> List[str]:
@@ -236,7 +238,7 @@ class GraphBuilder():
     
     def build_graph_from_distributor(
             self, 
-            params: GraphQueryParameters,
+            params: GraphQueryParameters, 
         ) -> Graph:
         hist_p = self.__get_transactions_query_params(
             params.center_addresses[0],
@@ -249,20 +251,40 @@ class GraphBuilder():
         g.add_node(center)
         for dex_address in self.__dex_addresses:
             g.delete_node(dex_address)
-        self.__save_graph(g,params)
+        result_dict = self.__get_result_dict(g,params)
+        self.__save_graph(result_dict,params)
         return g
     
     def build_graph_json(self, params : GraphQueryParameters):
         graph = self.build_graph_from_distributor(params)
-        return self.__save_graph(graph, params)
+        result_dict = self.__get_result_dict(graph,params)
+        return self.__dict_to_json(result_dict)
     
-    def __save_graph(self, graph : Graph , params : GraphQueryParameters ,):
+    def __save_graph(self, result_dict : dict, params: GraphQueryParameters):
+        return self.__controller.save_graph_record(params.user_id,result_dict)
+    
+    def __get_result_dict(self, graph: Graph , params: GraphQueryParameters):
+        communities = {}
+        if params.partition:
+            partition, _ = self.__nx_builder.get_louvain_partition(graph)
+            communities = self.get_communities_from_partition(partition)
         result_dict = graph.get_graph_dict()
         result_dict[ck.PARAMETERS] = self.__dict_to_json(params.to_dict())
-        self.__controller.save_graph_record(params.user_id,result_dict)
-        return self.__dict_to_json(result_dict)
+        return result_dict
     
     def __dict_to_json(self,data):
         dict_string = json.dumps(data)
         return json.loads(dict_string)
     
+    def get_communities_from_partition(self, partition: dict) -> dict:
+        communities: dict[str, list] = {}
+        for nodeID, communityID in partition.items():
+            if communityID not in communities:
+                communities[communityID] = []
+            communities[communityID].append(nodeID)
+        return communities
+
+    def get_communities(self, param: GraphQueryParameters) -> dict:
+        graph = self.build_graph_from_distributor(param)
+        partition, _ = self.__nx_builder.get_louvain_partition(graph)
+        return self.get_communities_from_partition(partition)

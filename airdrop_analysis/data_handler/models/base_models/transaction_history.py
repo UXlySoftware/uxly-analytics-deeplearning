@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 
-from data_handler.models.table_models.token_transfer import Token_Transfer
+from data_handler.models.odbc_models.token_transfer import Token_Transfer
 from utils.custom_keys import CustomKeys as ck
 
 

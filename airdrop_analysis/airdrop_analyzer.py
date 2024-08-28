@@ -72,7 +72,7 @@ class AirdropAnalyzer:
                 communities[communityID] = []
             communities[communityID].append(nodeID)
         return communities
-
+    
     def get_communities(self, param: GraphQueryParameters) -> dict:
         graph = self.__builder.build_graph_from_distributor(param)
         partition, _ = self.__nx_builder.get_louvain_partition(graph)

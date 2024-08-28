@@ -2,12 +2,12 @@ from typing import Tuple
 from datetime import datetime
 import json
 
-from data_handler.models.table_models.graph_record import Graph_Record
+from data_handler.models.odbc_models.graph_record import Graph_Record
 from data_handler.query_handlers.moralis_query_handler \
     import MoralisQueryHandler
-from data_handler.query_handlers.pw_query_handler import PWQueryHandler
+from data_handler.query_handlers.odbc_query_handlers import ODBCQueryHandler
 from data_handler.models.base_models.query_parameters import *
-from data_handler.models.table_models.address_record import Address_Record
+from data_handler.models.odbc_models.address_record import Address_Record
 from data_handler.models.base_models.transaction_history \
     import TransactionHistory
 from utils.custom_keys import CustomKeys as ck
@@ -16,7 +16,7 @@ from utils.custom_keys import CustomKeys as ck
 class ChainQueryController():
     def __init__(self, api_keys_path: str):
         self.__moralis_handler = MoralisQueryHandler(api_keys_path)
-        self.__database_handler = PWQueryHandler()
+        self.__database_handler = ODBCQueryHandler()
 
     def get_address_record(self, address) -> Address_Record:
         return self.__database_handler.get_address_record(address)
@@ -29,10 +29,15 @@ class ChainQueryController():
         record_list = []
         for graph in graph_records:
             record_dict = Graph_Record.to_dict(graph)
+            record_dict[ck.GRAPH] = self.__read_graph_from_json(record_dict[ck.GRAPH])
             record_string = json.dumps(record_dict)
             record_json = json.loads(record_string)
             record_list.append(record_json)
         return record_list
+
+    def __read_graph_from_json(self,graph_path : str):
+        with open(graph_path,"r") as file:
+            return json.loads(file.read())
 
     def __query_wallet_token_transfers(
             self,
@@ -47,15 +52,11 @@ class ChainQueryController():
         )
         return transfers, cursor
 
-    def compare_dates(self,date1_str: str,date2_str: str):
+    def compare_dates(self,date1_str: str,date2: datetime):
         try:
             date1 = datetime.strptime(date1_str,ck.DATETIME_FORMAT)
         except ValueError:
             date1 = datetime.strptime(date1_str,ck.DATETIME_FORMAT_FOR_QUERIED_TRANSFERS)
-        try:
-            date2 = datetime.strptime(date2_str,ck.DATETIME_FORMAT)
-        except ValueError:
-            date2 = datetime.strptime(date2_str,ck.DATETIME_FORMAT_FOR_QUERIED_TRANSFERS)
         return (date1-date2).total_seconds()
 
     def query_not_overlapped_transfers(
@@ -99,7 +100,7 @@ class ChainQueryController():
                     get_token_transfers_by_address(params.address))
                 transfers.sort(
                     key=lambda transfer: 
-                        datetime.strptime(transfer.block_timestamp,ck.DATETIME_FORMAT_FOR_QUERIED_TRANSFERS)
+                            transfer.block_timestamp
                         )
                 if params.order == ck.DESC:
                     transfers.reverse()

@@ -12,6 +12,7 @@ from data_handler.models.base_models.query_parameters import \
     GraphQueryParameters
 from data_handler.models.graph_models.graph import Graph
 from utils.path_provider import PathProvider
+from airdrop_analyzer import AirdropAnalyzer
 
 
 class GraphBuilderTest():
@@ -23,6 +24,7 @@ class GraphBuilderTest():
             self.__path_provider.get_dex_addresses_path()
         )
         self.__nx_builder = NetworkXBuilder()
+        self.__analyzer = AirdropAnalyzer()
         self.__claimers = pd.read_csv(
             self.__path_provider[ck.CLAIMERS_PATH],
             )
@@ -79,9 +81,26 @@ class GraphBuilderTest():
         )
         g = self.__builder.build_graph_from_distributor(param)
         return self.__show_graph(g, with_partition=param.partition)
+    
+    def __test_getting_communities(self):
+        param = GraphQueryParameters(
+            center_addresses=['0xa2a5c549a454a1631ff226e0cf8dc4af03a61a75'],
+            chain='base',
+            contract_addresses=['0x4ed4e862860bed51a9570b96d89af5e1b0efefed'],
+            from_date='2023-12-01T00:00:00Z',
+            to_date='2024-06-01T00:00:00Z',
+            parent_depth=1,
+            child_depth=1,
+            edge_limit=-1,
+            edge_order=ck.DESC,
+            partition=True,
+        )
+        communities = self.__analyzer.get_communities(param)
+        return communities
 
     def run_tests(self):
         # self.__test_building_graph_with_limit_one()
-        self.__test_visualizing_distribution_graph()
+        # self.__test_visualizing_distribution_graph()
+        self.__test_getting_communities()
         return
 
