@@ -105,6 +105,9 @@ class CustomKeys:
     
     # Azure Database
     ODBC_CONNECTION_STRING = 'odbc_connection_string'
+    
+    # Wallet Features
+    SAVE_PATH = 'save_path'
 
     # DynamoDB
     ITEM = 'Item'

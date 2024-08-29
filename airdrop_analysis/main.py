@@ -1,9 +1,11 @@
+import os
 from typing import Optional, List
 import json
-from fastapi import FastAPI, HTTPException , Query , Request
+from fastapi import FastAPI, File, HTTPException , Query , Request, UploadFile
 from fastapi.responses import HTMLResponse , JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import pandas as pd
 load_dotenv()
 
 from airdrop_analyzer import AirdropAnalyzer
@@ -11,6 +13,7 @@ from data_handler.models.base_models.query_parameters import \
     GraphQueryParameters, ClaimersGraphParameters
 from data_handler.models.query_models.community_query import CommunityQuery
 from data_handler.models.query_models.graph_query import GraphQuery
+from utils.custom_keys import CustomKeys as ck
 
 app = FastAPI()
 
@@ -147,6 +150,16 @@ async def get_communities(
     user_id=query_data.user_id
     )
     return AirdropAnalyzer().get_communities(param)
+
+@app.post("/upload_csv/")
+async def upload_csv(file: UploadFile = File(...)) -> dict:
+    save_path = os.getenv(ck.SAVE_PATH)
+    file_location = os.path.join(save_path, file.filename)
+    with open(file_location, "wb+") as file_object:
+        file_object.write(file.file.read())
+    
+    df = pd.read_csv(file_location)
+    return df.to_dict()
 
 @app.get("/distribution_graph_for_fast_api/")
 def visualize_distribution_graph(
